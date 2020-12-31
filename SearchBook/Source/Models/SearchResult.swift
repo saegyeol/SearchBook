@@ -8,6 +8,6 @@
 import Foundation
 
 struct SearchResult: Codable {
-  let page: Int
+  let page: String
   let books: [SimpleBook]
 }
