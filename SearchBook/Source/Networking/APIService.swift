@@ -27,19 +27,13 @@ final class APIService: APIServiceType {
       case .success(let data):
         do {
           let result = try JSONDecoder().decode(T.self, from: data)
-          DispatchQueue.main.async {
-            completionHandler(.success(result))
-          }
+          completionHandler(.success(result))
         } catch {
           print(error)
-          DispatchQueue.main.async {
-            completionHandler(.failure(NetworkError.invalidSerialize(message: error.localizedDescription)))
-          }
+          completionHandler(.failure(NetworkError.invalidSerialize(message: error.localizedDescription)))
         }
       case .failure(let error):
-        DispatchQueue.main.async {
-          completionHandler(.failure(error))
-        }
+        completionHandler(.failure(error))
       }
     }
   }
@@ -50,19 +44,13 @@ final class APIService: APIServiceType {
       case .success(let data):
         do {
           let result = try JSONDecoder().decode(T.self, from: data)
-          DispatchQueue.main.async {
-            completionHandler(.success(result))
-          }
+          completionHandler(.success(result))
         } catch {
           print(error)
-          DispatchQueue.main.async {
-            completionHandler(.failure(NetworkError.invalidSerialize(message: error.localizedDescription)))
-          }
+          completionHandler(.failure(NetworkError.invalidSerialize(message: error.localizedDescription)))
         }
       case .failure(let error):
-        DispatchQueue.main.async {
-          completionHandler(.failure(error))
-        }
+        completionHandler(.failure(error))
       }
     }
   }

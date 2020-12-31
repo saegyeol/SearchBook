@@ -12,7 +12,7 @@ enum SearchRouter: Routable {
   case bookDetail(String)
   
   var host: String {
-    "api.itbook.store/1.0/"
+    "api.itbook.store"
   }
   
   var scheme: String {
@@ -21,10 +21,10 @@ enum SearchRouter: Routable {
   
   var path: String {
     switch self {
-    case .search:
-      return "/search"
-    case .bookDetail:
-      return "/book"
+    case .search(let query, let page):
+      return "/1.0/search/\(query)/\(page)"
+    case .bookDetail(let isbn13):
+      return "/1.0/books/\(isbn13)"
     }
   }
   
@@ -40,14 +40,7 @@ enum SearchRouter: Routable {
     var urlComponent = URLComponents()
     urlComponent.host = host
     urlComponent.scheme = scheme
-    switch self {
-    case .search(let query, let page):
-      let path = self.path + "/\(query)" + "/\(page)"
-      urlComponent.path = path
-    case .bookDetail(let isbn13):
-      let path = self.path + "/\(isbn13)"
-      urlComponent.path = path
-    }
+    urlComponent.path = path
     guard let url = urlComponent.url else {
       throw NetworkError.invalidURL(url: urlComponent.host!)
     }
