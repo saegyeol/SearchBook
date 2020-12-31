@@ -11,7 +11,7 @@ extension UIImageView {
   func setImage(with url: URL, downloader: APIServiceType) {
     let cacheKey = url.absoluteString
     
-    if let image = ImageCacheManager.cache.object(forKey: NSString(string: cacheKey)) {
+    if let image = CacheManager.imageCache.object(forKey: NSString(string: cacheKey)) {
       DispatchQueue.main.async { [weak self] in
         guard let self = self else {
           return
@@ -23,7 +23,7 @@ extension UIImageView {
         switch response {
         case .success(let data):
           if let image = UIImage(data: data) {
-            ImageCacheManager.cache.setObject(image, forKey: NSString(string: cacheKey))
+            CacheManager.imageCache.setObject(image, forKey: NSString(string: cacheKey))
             self.image = image
           }
         case .failure(let error):
