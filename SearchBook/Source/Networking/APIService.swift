@@ -10,7 +10,6 @@ import Foundation
 protocol APIServiceType {
   func search<T: Codable>(query: String, page: Int, completionHandler: @escaping (Result<T, Error>) -> Void)
   func detailBook<T: Codable>(isbn: String, completionHandler: @escaping (Result<T, Error>) -> Void)
-  func imageLoad(with url: URL, completionHandler: @escaping (Result<Data, Error>) -> Void)
 }
 
 final class APIService: APIServiceType {
@@ -51,14 +50,6 @@ final class APIService: APIServiceType {
         }
       case .failure(let error):
         completionHandler(.failure(error))
-      }
-    }
-  }
-  
-  func imageLoad(with url: URL, completionHandler: @escaping (Result<Data, Error>) -> Void) {
-    self.APIClient.request(with: url) { (response) in
-      DispatchQueue.main.async {
-        completionHandler(response)
       }
     }
   }

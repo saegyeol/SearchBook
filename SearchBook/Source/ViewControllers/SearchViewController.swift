@@ -26,6 +26,7 @@ class SearchViewController: UIViewController {
   private let tableView: UITableView = UITableView()
   private let searchController = UISearchController(searchResultsController: nil)
   
+  //MARK: -initalizing
   init(viewModel: SearchViewModelType) {
     self.viewModel = viewModel
     super.init(nibName: nil, bundle: nil)
@@ -43,7 +44,9 @@ class SearchViewController: UIViewController {
     //tableView setting
     self.tableView.delegate = self
     self.tableView.dataSource = self
-    self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+    self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: "keywordCell")
+    self.tableView.register(SimpleBookTableViewCell.self, forCellReuseIdentifier: "bookCell")
+    self.tableView.rowHeight = UITableView.automaticDimension
     self.view.addSubview(self.tableView)
     
     //searchController setting
@@ -72,7 +75,6 @@ class SearchViewController: UIViewController {
   }
   
   private func searchBooks(query: String) {
-    print("search start query: \(query)")
     self.viewModel.search(with: query) { [weak self] in
       guard let self = self else { return }
       self.tableView.reloadData()
@@ -94,8 +96,10 @@ extension SearchViewController: UITableViewDelegate {
       return
     }
     print("디테일로 이동!!")
-    self.viewModel.moveToDetail(with: indexPath.row) {
-      
+    self.viewModel.moveToDetail(with: indexPath.row) { [weak self] viewModel in
+      guard let self = self else { return }
+      let detailViewController = DetailViewController(viewModel: viewModel)
+      self.navigationController?.pushViewController(detailViewController, animated: true)
     } failHandler: {
       
     }
@@ -119,23 +123,26 @@ extension SearchViewController: UITableViewDataSource {
   }
   
   func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-    let cell = tableView.dequeueReusableCell(withIdentifier: "cell")!
+    guard let keywordCell = tableView.dequeueReusableCell(withIdentifier: "keywordCell") else {
+      return UITableViewCell()
+    }
+    guard let bookCell = tableView.dequeueReusableCell(withIdentifier: "bookCell", for: indexPath) as? SimpleBookTableViewCell else {
+      return UITableViewCell()
+    }
     
     if self.isSearchBarTextEmpty {
       let recentQuery = self.recentQueries[indexPath.row]
-      cell.textLabel!.text = recentQuery
-      
-      return cell
+      keywordCell.textLabel?.text = recentQuery
+      return keywordCell
     }
     
     if self.isSearchEnd {
       let book = self.viewModel.simpleBooks[indexPath.row]
-      cell.textLabel!.text = book.title
-      
-      return cell
+      bookCell.configureCell(with: book)
+      return bookCell
     }
     
-    return cell
+    return keywordCell
   }
 }
 

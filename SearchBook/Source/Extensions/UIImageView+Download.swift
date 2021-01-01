@@ -8,27 +8,18 @@
 import UIKit
 
 extension UIImageView {
-  func setImage(with url: URL, downloader: APIServiceType) {
-    let cacheKey = url.absoluteString
+  func setImage(with url: URL) {
+    let downloader = APIClient.shared
     
-    if let image = CacheManager.imageCache.object(forKey: NSString(string: cacheKey)) {
-      DispatchQueue.main.async { [weak self] in
-        guard let self = self else {
-          return
+    downloader.downloadImage(with: url) { (response) in
+      switch response {
+      case .success(let image):
+        DispatchQueue.main.async { [weak self] in
+          guard let self = self else { return }
+          self.image = image
         }
-        self.image = image
-      }
-    } else {
-      downloader.imageLoad(with: url) { (response) in
-        switch response {
-        case .success(let data):
-          if let image = UIImage(data: data) {
-            CacheManager.imageCache.setObject(image, forKey: NSString(string: cacheKey))
-            self.image = image
-          }
-        case .failure(let error):
-          print(error.localizedDescription)
-        }
+      case .failure(let error):
+        print(error.localizedDescription)
       }
     }
   }
