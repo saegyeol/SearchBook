@@ -54,7 +54,6 @@ class SearchViewController: UIViewController {
     self.searchController.obscuresBackgroundDuringPresentation = false
     self.searchController.searchBar.delegate = self
     self.searchController.searchBar.placeholder = "Search Books"
-    self.searchController.searchResultsUpdater = self
     self.navigationItem.hidesSearchBarWhenScrolling = false
     self.navigationItem.searchController = self.searchController
   }
@@ -74,13 +73,36 @@ class SearchViewController: UIViewController {
     NSLayoutConstraint.activate(tableViewConstraint)
   }
   
-  private func searchBooks(query: String) {
+  //MARK:- api call methods
+  private func searchBooks(with query: String) {
     self.viewModel.search(with: query) { [weak self] in
       guard let self = self else { return }
       self.tableView.reloadData()
-    } failHandler: {
-      
+    } failHandler: { [weak self] message in
+      guard let self = self else { return }
+      self.presentAlert(with: message)
     }
+  }
+  
+  private func loadDetailBook(with index: Int) {
+    self.viewModel.moveToDetail(with: index) { [weak self] viewModel in
+      guard let self = self else { return }
+      let detailViewController = DetailViewController(viewModel: viewModel)
+      self.navigationController?.pushViewController(detailViewController, animated: true)
+    } failHandler: { [weak self] message in
+      guard let self = self else { return }
+      self.presentAlert(with: message)
+    }
+  }
+  
+  ///notice alert method
+  private func presentAlert(with message: String) {
+    let alert = UIAlertController(title: "Notice",
+                                  message: message,
+                                  preferredStyle: .alert)
+    let alertAction = UIAlertAction(title: "OK", style: .default, handler: nil)
+    alert.addAction(alertAction)
+    self.present(alert, animated: true, completion: nil)
   }
 }
 
@@ -95,21 +117,14 @@ extension SearchViewController: UITableViewDelegate {
       
       return
     }
-    print("디테일로 이동!!")
-    self.viewModel.moveToDetail(with: indexPath.row) { [weak self] viewModel in
-      guard let self = self else { return }
-      let detailViewController = DetailViewController(viewModel: viewModel)
-      self.navigationController?.pushViewController(detailViewController, animated: true)
-    } failHandler: {
-      
-    }
+    self.loadDetailBook(with: indexPath.row)
   }
   
   func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
     let booksCount = self.viewModel.simpleBooks.count
-    if booksCount != 0, indexPath.row >= booksCount - 5 {
+    if booksCount != 0, indexPath.row >= booksCount - 7 {
       guard let query = self.searchController.searchBar.text else { return }
-      self.searchBooks(query: query)
+      self.searchBooks(with: query)
     }
   }
 }
@@ -146,14 +161,6 @@ extension SearchViewController: UITableViewDataSource {
   }
 }
 
-extension SearchViewController: UISearchResultsUpdating {
-  func updateSearchResults(for searchController: UISearchController) {
-    
-  }
-  
-
-}
-
 extension SearchViewController: UISearchBarDelegate {
   func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
     DispatchQueue.main.async { [weak self] in
@@ -175,6 +182,6 @@ extension SearchViewController: UISearchBarDelegate {
       self.recentQueries.append(query)
       UserDefaults.standard.set(self.recentQueries, forKey: "recentQuery")
     }
-    self.searchBooks(query: query)
+    self.searchBooks(with: query)
   }
 }
