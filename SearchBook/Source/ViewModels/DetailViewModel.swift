@@ -5,13 +5,14 @@
 //  Created by 윤새결 on 2021/01/01.
 //
 
-import Foundation
+import UIKit
 
 protocol DetailViewModelType {
   var detailBook: DetailBook { get }
   var note: String? { get }
 
   func saveNote(with content: String)
+  func linkAction()
 }
 
 class DetailViewModel: DetailViewModelType {
@@ -32,6 +33,14 @@ class DetailViewModel: DetailViewModelType {
     } else {
       let data = [isbn13 : content]
       UserDefaults.standard.setValue(data, forKey: self.noteKey)
+    }
+  }
+  
+  func linkAction() {
+    let application = UIApplication.shared
+    let url = self.detailBook.url.asEncodedURL()
+    if application.canOpenURL(url) {
+      application.open(url, options: [:], completionHandler: nil)
     }
   }
 }

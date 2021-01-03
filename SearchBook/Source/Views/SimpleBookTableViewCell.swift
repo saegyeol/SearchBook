@@ -48,6 +48,14 @@ class SimpleBookTableViewCell: UITableViewCell {
     return label
   }()
   
+  private let urlLabel: UILabel = {
+    let label = UILabel()
+    label.font = UIFont.systemFont(ofSize: 12)
+    label.textColor = .systemGray
+    label.translatesAutoresizingMaskIntoConstraints = false
+    return label
+  }()
+  
   private let containerStackView: UIStackView = {
     let stackView = UIStackView()
     stackView.axis = .horizontal
@@ -70,6 +78,7 @@ class SimpleBookTableViewCell: UITableViewCell {
     self.contentStackView.addArrangedSubview(self.subtitleLabel)
     self.contentStackView.addArrangedSubview(self.isbnLabel)
     self.contentStackView.addArrangedSubview(self.priceLabel)
+    self.contentStackView.addArrangedSubview(self.urlLabel)
     
     self.containerStackView.addArrangedSubview(self.bookImageView)
     self.containerStackView.addArrangedSubview(self.contentStackView)
@@ -107,6 +116,7 @@ class SimpleBookTableViewCell: UITableViewCell {
     self.subtitleLabel.text = book.subtitle
     self.isbnLabel.text = "isbn13: \(book.isbn13)"
     self.priceLabel.text = book.price
+    self.urlLabel.text = book.url
   }
   
   override func prepareForReuse() {
