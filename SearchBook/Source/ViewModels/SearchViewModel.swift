@@ -14,10 +14,10 @@ protocol SearchViewModelType {
   func reset(completion: @escaping () -> Void)
   func search(with query: String,
               successHandler: @escaping () -> Void,
-              failHandler: @escaping () -> Void)
+              failHandler: @escaping (String) -> Void)
   func moveToDetail(with index: Int,
                     successHandler: @escaping (DetailViewModel) -> Void,
-                    failHandler: @escaping () -> Void)
+                    failHandler: @escaping (String) -> Void)
 }
 
 class SearchViewModel: SearchViewModelType {
@@ -30,21 +30,19 @@ class SearchViewModel: SearchViewModelType {
     self.apiService = apiService
   }
   
-  func moveToDetail(with index: Int, successHandler: @escaping (DetailViewModel) -> Void, failHandler: @escaping () -> Void) {
+  func moveToDetail(with index: Int, successHandler: @escaping (DetailViewModel) -> Void, failHandler: @escaping (String) -> Void) {
     let isbn13 = simpleBooks[index].isbn13
-    self.apiService.detailBook(isbn: isbn13) { (response: Result<DetailBook, Error>) in
+    self.apiService.detailBook(isbn: isbn13) { (response: Result<DetailBook, NetworkError>) in
       switch response {
       case .success(let value):
         let viewModel = DetailViewModel(detailBook: value)
-        dump(value)
         DispatchQueue.main.async {
           successHandler(viewModel)
         }
       case .failure(let error):
         DispatchQueue.main.async {
-          failHandler()
+          failHandler(error.message)
         }
-        print(error)
       }
     }
   }
@@ -57,20 +55,25 @@ class SearchViewModel: SearchViewModelType {
     }
   }
   
-  func search(with query: String, successHandler: @escaping () -> Void, failHandler: @escaping () -> Void) {
+  func search(with query: String, successHandler: @escaping () -> Void, failHandler: @escaping (String) -> Void) {
     self.pageManager.progress { (page, done) in
-      self.apiService.search(query: query, page: page) { (response: Result<SearchResult, Error>) in
+      self.apiService.search(query: query, page: page) { (response: Result<SearchResult, NetworkError>) in
         switch response {
         case .success(let value):
           self.simpleBooks.append(contentsOf: value.books)
           done(value.books)
-          DispatchQueue.main.async {
-            successHandler()
+          if !value.books.isEmpty {
+            DispatchQueue.main.async {
+              successHandler()
+            }
+          } else if value.books.isEmpty && page == 1 {
+            DispatchQueue.main.async {
+              failHandler("Search result is empty")
+            }
           }
         case .failure(let error):
-          print(error.localizedDescription)
           DispatchQueue.main.async {
-            failHandler()
+            failHandler(error.message)
           }
         }
       }

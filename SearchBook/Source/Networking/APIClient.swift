@@ -8,8 +8,8 @@
 import UIKit
 
 protocol APIClientAble {
-  func request(with target: Routable, responseHandler: @escaping (Result<Data, Error>) -> Void)
-  func downloadImage(with url: URL, responseHandler: @escaping (Result<UIImage, Error>) -> Void)
+  func request(with target: Routable, responseHandler: @escaping (Result<Data, NetworkError>) -> Void)
+  func downloadImage(with url: URL, responseHandler: @escaping (Result<UIImage, NetworkError>) -> Void)
 }
 
 final class APIClient: APIClientAble {
@@ -20,7 +20,7 @@ final class APIClient: APIClientAble {
     self.session = session
   }
   
-  public func request(with target: Routable, responseHandler: @escaping (Result<Data, Error>) -> Void) {
+  public func request(with target: Routable, responseHandler: @escaping (Result<Data, NetworkError>) -> Void) {
     do {
       let request = try target.asURLRequest()
       let key = request.url!.absoluteString
@@ -28,35 +28,75 @@ final class APIClient: APIClientAble {
         responseHandler(.success(cacheData))
       } else {
         let dataTask = self.session.dataTask(with: request) { (data, response, error) in
+
+          guard let httpResponse = response as? HTTPURLResponse else {
+            let errorMessage = error!.localizedDescription
+            let error = NetworkError(type: NetworkErrorCase.invalidResponse,
+                                     message: errorMessage)
+            responseHandler(.failure(error))
+            return
+          }
+          
           guard error == nil else {
-            responseHandler(.failure(NetworkError.invalidReponse(message: error!.localizedDescription)))
+            let errorMessage = error!.localizedDescription
+            let error = NetworkError(type: NetworkErrorCase.invalidResponse,
+                                     message: errorMessage)
+            responseHandler(.failure(error))
             return
           }
           guard let data = data else {
              return
           }
-          CacheManager.setObject(response: data, forKey: key)
-          responseHandler(.success(data))
+          
+          if httpResponse.statusCode == 200 {
+            CacheManager.setObject(response: data, forKey: key)
+            responseHandler(.success(data))
+          } else if httpResponse.statusCode == 404 {
+            let error = NetworkError(type: NetworkErrorCase.responseDataIsEmpty,
+                                     message: "Data is not found")
+            responseHandler(.failure(error))
+          } else if httpResponse.statusCode == 500 {
+            let error = NetworkError(type: NetworkErrorCase.internalServerError,
+                                     message: "Internal server error")
+            responseHandler(.failure(error))
+          } else {
+            let error = NetworkError(type: NetworkErrorCase.unexpectedError,
+                                     message: "Unexpected Error please, contact us")
+            responseHandler(.failure(error))
+          }
         }
         dataTask.resume()
       }
     } catch {
-      responseHandler(.failure(error))
+      responseHandler(.failure(error as! NetworkError))
     }
   }
   
-  public func downloadImage(with url: URL, responseHandler: @escaping (Result<UIImage, Error>) -> Void) {
+  public func downloadImage(with url: URL, responseHandler: @escaping (Result<UIImage, NetworkError>) -> Void) {
     let key = url.absoluteString
     if let cachedImage = CacheManager.imageObject(forKey: key) {
       responseHandler(.success(cachedImage))
     } else {
       let downloadTask = self.session.dataTask(with: url) { (data, response, error) in
+        let errorMessage = error.debugDescription
+        guard let _ = response as? HTTPURLResponse else {
+          let error = NetworkError(type: NetworkErrorCase.invalidResponse,
+                                   message: errorMessage)
+          responseHandler(.failure(error))
+          return
+        }
+        
         guard error == nil else {
-          responseHandler(.failure(NetworkError.invalidReponse(message: error!.localizedDescription)))
+          let error = NetworkError(type: NetworkErrorCase.invalidResponse,
+                                   message: errorMessage)
+          responseHandler(.failure(error))
           return
         }
         guard let data = data,
               let image = UIImage(data: data) else {
+          let error = NetworkError(type: NetworkErrorCase.invalidData,
+                                    message: "Data is not image")
+          responseHandler(.failure(error))
           return
         }
         CacheManager.setObject(response: image, forKey: key)

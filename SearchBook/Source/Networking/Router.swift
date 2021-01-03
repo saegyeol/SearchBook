@@ -42,7 +42,9 @@ enum SearchRouter: Routable {
     urlComponent.scheme = scheme
     urlComponent.path = path
     guard let url = urlComponent.url else {
-      throw NetworkError.invalidURL(url: urlComponent.host!)
+      let error = NetworkError(type: NetworkErrorCase.invalidURL,
+                               message: "please, check router")
+      throw error
     }
     var request = URLRequest(url: url)
     request.httpMethod = self.methods.rawValue

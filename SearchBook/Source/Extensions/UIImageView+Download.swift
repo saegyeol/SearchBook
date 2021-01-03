@@ -18,8 +18,11 @@ extension UIImageView {
           guard let self = self else { return }
           self.image = image
         }
-      case .failure(let error):
-        print(error.localizedDescription)
+      case .failure(_):
+        DispatchQueue.main.async { [weak self] in
+          guard let self = self else { return }
+          self.image = nil
+        }
       }
     }
   }

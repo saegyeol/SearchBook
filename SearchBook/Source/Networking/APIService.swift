@@ -8,8 +8,8 @@
 import Foundation
 
 protocol APIServiceType {
-  func search<T: Codable>(query: String, page: Int, completionHandler: @escaping (Result<T, Error>) -> Void)
-  func detailBook<T: Codable>(isbn: String, completionHandler: @escaping (Result<T, Error>) -> Void)
+  func search<T: Codable>(query: String, page: Int, completionHandler: @escaping (Result<T, NetworkError>) -> Void)
+  func detailBook<T: Codable>(isbn: String, completionHandler: @escaping (Result<T, NetworkError>) -> Void)
 }
 
 final class APIService: APIServiceType {
@@ -20,7 +20,7 @@ final class APIService: APIServiceType {
     self.APIClient = client
   }
   
-  func search<T: Codable>(query: String, page: Int, completionHandler: @escaping (Result<T, Error>) -> Void) {
+  func search<T: Codable>(query: String, page: Int, completionHandler: @escaping (Result<T, NetworkError>) -> Void) {
     self.APIClient.request(with: SearchRouter.search(query, page)) { (response) in
       switch response {
       case .success(let data):
@@ -28,8 +28,9 @@ final class APIService: APIServiceType {
           let result = try JSONDecoder().decode(T.self, from: data)
           completionHandler(.success(result))
         } catch {
-          print(error)
-          completionHandler(.failure(NetworkError.invalidSerialize(message: error.localizedDescription)))
+          let error = NetworkError(type: NetworkErrorCase.invalidSerialize,
+                                   message: "please, check your model \(String(describing: T.self))")
+          completionHandler(.failure(error))
         }
       case .failure(let error):
         completionHandler(.failure(error))
@@ -37,7 +38,7 @@ final class APIService: APIServiceType {
     }
   }
   
-  func detailBook<T: Codable>(isbn: String, completionHandler: @escaping (Result<T, Error>) -> Void) {
+  func detailBook<T: Codable>(isbn: String, completionHandler: @escaping (Result<T, NetworkError>) -> Void) {
     self.APIClient.request(with: SearchRouter.bookDetail(isbn)) { (response) in
       switch response {
       case .success(let data):
@@ -45,8 +46,9 @@ final class APIService: APIServiceType {
           let result = try JSONDecoder().decode(T.self, from: data)
           completionHandler(.success(result))
         } catch {
-          print(error)
-          completionHandler(.failure(NetworkError.invalidSerialize(message: error.localizedDescription)))
+          let error = NetworkError(type: NetworkErrorCase.invalidSerialize,
+                                   message: "please, check your model \(String(describing: T.self))")
+          completionHandler(.failure(error))
         }
       case .failure(let error):
         completionHandler(.failure(error))

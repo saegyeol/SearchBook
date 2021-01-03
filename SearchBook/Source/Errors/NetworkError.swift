@@ -7,8 +7,20 @@
 
 import Foundation
 
-enum NetworkError: Error {
-  case invalidURL(url: String)
-  case invalidReponse(message: String)
-  case invalidSerialize(message: String)
+enum NetworkErrorCase {
+  case invalidURL
+  case invalidResponse
+  case invalidSerialize
+  case invalidData
+  case responseDataIsEmpty
+  case internalServerError
+  case unexpectedError
+}
+
+struct NetworkError: Error {
+  let type: NetworkErrorCase
+  let message: String
+  var localizedDescription: String {
+    return "\(String(describing: self.type)) reason: \(message)"
+  }
 }
